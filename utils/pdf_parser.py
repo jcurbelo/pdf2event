@@ -31,11 +31,13 @@ DATES_COUNT = [
     1,
 ]
 
+
 def extract_case_number(text: str) -> str:
     m = re.search(r"Case No: ([^\n]+)", text, re.MULTILINE | re.IGNORECASE)
     if m:
         return m.group(1)
     return ''
+
 
 def clean_text(text: str) -> str:
     # remove unwanted content
@@ -76,12 +78,16 @@ def parse_files(files: List[IO]):
 
 
 def parse_file(file: IO) -> dict:
-    text = extract_text(file)
-    case_number = extract_case_number(text)
-    text = clean_text(text)
-    chunks = extract_chunks(text)
-    dates = {}
-    for title, content in chunks.items():
-        dates[title] = [d.date().isoformat()
-                        for d in datefinder.find_dates(content)][0:DATES_COUNT[EVENT_TITLES.index(title)]]
-    return {"dates": dates, "case": case_number}
+    try:
+        text = extract_text(file)
+        case_number = extract_case_number(text)
+        text = clean_text(text)
+        chunks = extract_chunks(text)
+        dates = {}
+        for title, content in chunks.items():
+            dates[title] = [d.date().isoformat()
+                            for d in datefinder.find_dates(content)][0:DATES_COUNT[EVENT_TITLES.index(title)]]
+        return {"dates": dates, "case": case_number}
+    except Exception as e:
+        pass
+    return {"dates": [], "case": "INVALID FILE"}
