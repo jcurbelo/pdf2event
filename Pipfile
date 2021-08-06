@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 fastapi = {extras = ["all"], version = "*"}
 python-multipart = "*"
+"pdfminer.six" = "*"
+datefinder = "*"
 
 [dev-packages]
 autopep8 = "*"
