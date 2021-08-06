@@ -20,6 +20,30 @@
                     <v-btn color="success" class="mr-4" @click="uploadFiles">
                         Upload
                     </v-btn>
+                    <v-divider></v-divider>
+                    <v-card elevation="2" v-for="res in results" class="mt-4">
+                        <v-card-title>
+                            CASE: {[ res.case ]}
+                        </v-card-title>
+
+                        <v-card-text>
+                            <v-list>
+                                <v-list-item v-for="(item, key, index) in res.dates">
+                                    <v-list-item-content>
+                                        <v-list-item-title>{[ key ]}</v-list-item-title>
+                                        <v-list-item-subtitle v-for="date in item">{[ date ]}</v-list-item-subtitle>
+                                    </v-list-item-content>
+                                </v-list-item>
+                            </v-list>
+                        </v-card-text>
+
+                        <v-card-actions>
+                            <v-btn color="success" class="mr-4">
+                                Create Events
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+
                 </v-container>
             </v-main>
         </v-app>
@@ -31,9 +55,11 @@
     <script>
         new Vue({
             el: "#app",
+            delimiters: ['{[', ']}'],
             vuetify: new Vuetify(),
             data: {
-                files: null
+                files: null,
+                results: []
             },
             methods: {
                 uploadFiles() {
@@ -53,6 +79,7 @@
                                 console.log({
                                     response
                                 });
+                                this.results = response.data.result;
                             })
                             .catch(error => {
                                 console.log({
