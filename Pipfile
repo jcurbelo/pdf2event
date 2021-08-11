@@ -8,6 +8,7 @@ fastapi = {extras = ["all"], version = "*"}
 python-multipart = "*"
 "pdfminer.six" = "*"
 datefinder = "*"
+authlib = "*"
 
 [dev-packages]
 autopep8 = "*"
