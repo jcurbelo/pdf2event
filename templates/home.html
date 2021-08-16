@@ -15,6 +15,7 @@
         <v-app>
             <v-main>
                 <v-container id="main">
+                    <a href="/auth/login">Login</a>
                     <v-file-input show-size counter chips multiple label="Upload your PDF files" v-model="files">
                     </v-file-input>
                     <v-btn color="success" class="mr-4" @click="uploadFiles" :loading="loading" :disabled="loading">
