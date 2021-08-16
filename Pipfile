@@ -9,6 +9,7 @@ python-multipart = "*"
 "pdfminer.six" = "*"
 datefinder = "*"
 authlib = "*"
+httpx = "*"
 
 [dev-packages]
 autopep8 = "*"
