@@ -13,9 +13,15 @@
 
     <div id="app">
         <v-app>
+            <v-app-bar app>
+                {% if 'access_token' in request.session['oauth_values'] %}
+                <v-btn color="primary mr-4" href="/auth/logout">Logout</v-btn>
+                {% else %}
+                <v-btn color="primary mr-4" href="/auth/login">Login</v-btn>
+                {% endif %}
+            </v-app-bar>
             <v-main>
-                <v-container id="main">
-                    <a href="/auth/login">Login</a>
+                <v-container>
                     <v-file-input show-size counter chips multiple label="Upload your PDF files" v-model="files">
                     </v-file-input>
                     <v-btn color="success" class="mr-4" @click="uploadFiles" :loading="loading" :disabled="loading">
@@ -24,15 +30,20 @@
                     <v-divider></v-divider>
                     <v-card elevation="2" v-for="res in results" class="mt-4">
                         <v-card-title>
-                            CASE: {[ res.case ]}
+                            <v-text-field label="CASE" v-model="res.case"></v-text-field>
                         </v-card-title>
+                        <v-card-subtitle>
+                            FILE: {[ res.filename ]}
+                        </v-card-subtitle>
 
                         <v-card-text>
                             <v-list>
                                 <v-list-item v-for="(item, key, index) in res.dates">
                                     <v-list-item-content>
                                         <v-list-item-title>{[ key ]}</v-list-item-title>
-                                        <v-list-item-subtitle v-for="date in item">{[ date ]}</v-list-item-subtitle>
+                                        <v-list-item-subtitle v-for="date in item">
+                                            <v-text-field v-model="date" prepend-icon="mdi-calendar"></v-text-field>
+                                        </v-list-item-subtitle>
                                     </v-list-item-content>
                                 </v-list-item>
                             </v-list>
@@ -47,6 +58,10 @@
 
                 </v-container>
             </v-main>
+
+            <v-footer app>
+                Copyright © PDF2Event
+            </v-footer>
         </v-app>
     </div>
 
@@ -61,7 +76,7 @@
             data: {
                 files: null,
                 loading: false,
-                results: []
+                results: [],
             },
             methods: {
                 uploadFiles() {
@@ -79,17 +94,10 @@
                             .post("/upload-files", formData)
                             .then(response => {
                                 this.loading = false;
-                                console.log("Success!");
-                                console.log({
-                                    response
-                                });
                                 this.results = response.data.result;
                             })
                             .catch(error => {
                                 this.loading = false;
-                                console.log({
-                                    error
-                                });
                             });
                     } else {
                         console.log("there are no files.");

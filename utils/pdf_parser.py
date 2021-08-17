@@ -1,4 +1,4 @@
-from typing import List, IO
+from typing import List, IO, Tuple
 from pdfminer.high_level import extract_text
 import re
 import datefinder
@@ -73,8 +73,8 @@ def extract_chunks(text: str) -> dict:
     return chunks
 
 
-def parse_files(files: List[IO]):
-    return [parse_file(f) for f in files]
+def parse_files(files: List[Tuple[IO, str]]) -> List[dict]:
+    return [{**parse_file(f), 'filename': name} for f, name in files]
 
 
 def parse_file(file: IO) -> dict:
