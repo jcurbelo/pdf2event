@@ -14,49 +14,112 @@
     <div id="app">
         <v-app>
             <v-app-bar app>
-                {% if 'access_token' in request.session['oauth_values'] %}
-                <v-btn color="primary mr-4" href="/auth/logout">Logout</v-btn>
-                {% else %}
-                <v-btn color="primary mr-4" href="/auth/login">Login</v-btn>
-                {% endif %}
+                <v-col class="text-right">
+                    {% if 'access_token' in request.session['oauth_values'] %}
+                    <v-btn color="primary mr-4" href="/auth/logout">Logout</v-btn>
+                    {% else %}
+                    <v-btn color="primary mr-4" href="/auth/login">Login</v-btn>
+                    {% endif %}
+                </v-col>
             </v-app-bar>
             <v-main>
+                {% if 'access_token' in request.session['oauth_values'] %}
                 <v-container>
+                    <v-snackbar v-model="snackbar" :multi-line="multiLine">
+                        A total of {[ eventsCreated.length ]} events were created.
+
+                        <template v-slot:action="{ attrs }">
+                            <v-btn color="red" text v-bind="attrs" @click="snackbar = false">
+                                Close
+                            </v-btn>
+                        </template>
+                    </v-snackbar>
+
                     <v-file-input show-size counter chips multiple label="Upload your PDF files" v-model="files">
                     </v-file-input>
-                    <v-btn color="success" class="mr-4" @click="uploadFiles" :loading="loading" :disabled="loading">
-                        Upload
-                    </v-btn>
+                    <v-col>
+                        <v-btn :disabled="!files || !files.length || loading" color="success" class="mr-4"
+                            @click="uploadFiles" :loading="loading">
+                            Upload
+                        </v-btn>
+                    </v-col>
                     <v-divider></v-divider>
-                    <v-card elevation="2" v-for="res in results" class="mt-4">
-                        <v-card-title>
-                            <v-text-field label="CASE" v-model="res.case"></v-text-field>
-                        </v-card-title>
-                        <v-card-subtitle>
-                            FILE: {[ res.filename ]}
-                        </v-card-subtitle>
+                    <v-dialog v-model="dialog" width="500">
+                        <template v-slot:activator="{ on, attrs }">
 
-                        <v-card-text>
-                            <v-list>
-                                <v-list-item v-for="(item, key, index) in res.dates">
-                                    <v-list-item-content>
-                                        <v-list-item-title>{[ key ]}</v-list-item-title>
-                                        <v-list-item-subtitle v-for="date in item">
-                                            <v-text-field v-model="date" prepend-icon="mdi-calendar"></v-text-field>
-                                        </v-list-item-subtitle>
-                                    </v-list-item-content>
-                                </v-list-item>
-                            </v-list>
-                        </v-card-text>
+                            <v-col class="text-right">
+                                <v-btn :disabled="!results || !results.length || loading" color="success" class="mr-4"
+                                    v-bind="attrs" v-on="on" :loading="loading">
+                                    Create Events
+                                </v-btn>
+                            </v-col>
+                        </template>
 
-                        <v-card-actions>
-                            <v-btn color="success" class="mr-4">
-                                Create Events
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
+                        <v-card>
+                            <v-card-title>
+                                Info
+                            </v-card-title>
 
+                            <v-card-text>
+                                Are you sure you want to create events from the uploaded files?
+                            </v-card-text>
+
+                            <v-divider></v-divider>
+
+                            <v-card-actions>
+                                <v-spacer></v-spacer>
+                                <v-btn :disabled="loading" color="primary" text @click="dialog = false">
+                                    Cancel
+                                </v-btn>
+                                <v-btn :loading="loading" :disabled="loading" color="primary" @click="createEvents">
+                                    Create Events
+                                </v-btn>
+                            </v-card-actions>
+                        </v-card>
+                    </v-dialog>
+
+                    <v-expansion-panels>
+                        <v-expansion-panel v-for="res in results" :key="res.id">
+                            <v-checkbox label="OK" v-model="res.reviewed"></v-checkbox>
+                            <v-expansion-panel-header>
+                                CASE: {[ res.case ]} FILE: {[ res.filename ]} ({[
+                                res.datesCount ]} events found)
+                            </v-expansion-panel-header>
+                            <v-expansion-panel-content>
+                                <v-text-field label="CASE" v-model="res.case"></v-text-field>
+
+                                <v-list>
+                                    <v-list-item v-for="event in res.events">
+                                        <v-list-item-content>
+                                            <v-list-item-title>{[ event.name ]}</v-list-item-title>
+                                            <v-list-item-subtitle v-for="(date, index) in event.dates">
+                                                <v-menu v-model="isDateSelected[date.id]"
+                                                    :close-on-content-click="false" :nudge-right="40"
+                                                    transition="scale-transition" offset-y min-width="auto">
+                                                    <template v-slot:activator="{ on, attrs }">
+                                                        <v-text-field v-model="date.value" label="Event date"
+                                                            prepend-icon="mdi-calendar" readonly v-bind="attrs"
+                                                            v-on="on"></v-text-field>
+                                                    </template>
+                                                    <v-date-picker v-model="date.value"
+                                                        @input="isDateSelected[date.id] = false">
+                                                    </v-date-picker>
+                                                </v-menu>
+                                            </v-list-item-subtitle>
+                                        </v-list-item-content>
+                                    </v-list-item>
+                                </v-list>
+                            </v-expansion-panel-content>
+                        </v-expansion-panel>
+                    </v-expansion-panels>
                 </v-container>
+                {% else %}
+                <v-banner>
+                    <v-col cols="12" class="text-center">
+                        Please, Login first using your Practice Panther credentials
+                    </v-col>
+                </v-banner>
+                {% endif %}
             </v-main>
 
             <v-footer app>
@@ -77,6 +140,10 @@
                 files: null,
                 loading: false,
                 results: [],
+                isDateSelected: {},
+                dialog: false,
+                eventsCreated: [],
+                snackbar: false,
             },
             methods: {
                 uploadFiles() {
@@ -95,6 +162,9 @@
                             .then(response => {
                                 this.loading = false;
                                 this.results = response.data.result;
+                                this.results.forEach(res => {
+                                    res['reviewed'] = false;
+                                });
                             })
                             .catch(error => {
                                 this.loading = false;
@@ -102,8 +172,30 @@
                     } else {
                         console.log("there are no files.");
                     }
+                },
+                createEvents() {
+
+                    const reviewedEvents = this.results.filter(res => res.reviewed);
+                    if (reviewedEvents) {
+                        this.loading = true;
+
+                        axios
+                            .post("/generate-events", reviewedEvents)
+                            .then(response => {
+                                this.loading = false;
+                                this.dialog = false;
+                                this.eventsCreated = response.data.result;
+                                this.snackbar = true;
+                            })
+                            .catch(error => {
+                                this.loading = false;
+                                this.dialog = false;
+                            });
+                    } else {}
                 }
-            }
+
+            },
+
         });
     </script>
 </body>
