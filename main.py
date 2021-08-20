@@ -59,7 +59,9 @@ async def root(request: Request):
 
 @app.get("/auth/login")
 async def login_via_practice_panther(request: Request):
-    redirect_uri = request.url_for("auth")
+    # HACK: This is a hack to get the auth callback URL with https.
+    # redirect_uri = request.url_for("auth")
+    redirect_uri = "https://pdf2event.com/auth/callback"
     return await oauth.practice_panther.authorize_redirect(request, redirect_uri)
 
 
