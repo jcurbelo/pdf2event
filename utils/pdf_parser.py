@@ -3,6 +3,7 @@ from pdfminer.high_level import extract_text
 import re
 import datefinder
 import uuid
+from datetime import datetime
 
 EVENT_TITLES = [
     "ADDITION OF ANY NEW PARTIES",
@@ -98,6 +99,11 @@ def parse_file(file: IO) -> dict:
             }
             event["datesCount"] = len(event["dates"])
             total_dates_count += event["datesCount"]
+            # HACK: modifies special case
+            if title == "TRIAL":
+                for d in event["dates"]:
+                    d["value"] = datetime.fromisoformat(
+                        d["value"]).replace(day=1).isoformat().split("T")[0]
             events.append(event)
         return {"events": events, "case": case_number, "id": event_id, "datesCount": total_dates_count}
     except Exception as e:
