@@ -25,7 +25,7 @@
             <v-main>
                 {% if 'access_token' in request.session['oauth_values'] %}
                 <v-container>
-                    <v-snackbar v-model="snackbar" :multi-line="multiLine">
+                    <v-snackbar v-model="snackbar" :multi-line="true">
                         A total of {[ eventsCreated.length ]} events were created.
 
                         <template v-slot:action="{ attrs }">
@@ -97,9 +97,11 @@
                                                     :close-on-content-click="false" :nudge-right="40"
                                                     transition="scale-transition" offset-y min-width="auto">
                                                     <template v-slot:activator="{ on, attrs }">
-                                                        <v-text-field v-model="date.value" label="Event date"
-                                                            prepend-icon="mdi-calendar" readonly v-bind="attrs"
-                                                            v-on="on"></v-text-field>
+                                                        <v-text-field :value="formatDate(date.value)"
+                                                            @input="date.value = parseDate($event)"
+                                                            @blur="date.value = parseDate(dateFormatted)"
+                                                            label="Event date" prepend-icon="mdi-calendar" readonly
+                                                            v-bind="attrs" v-on="on"></v-text-field>
                                                     </template>
                                                     <v-date-picker v-model="date.value"
                                                         @input="isDateSelected[date.id] = false">
@@ -163,6 +165,7 @@
                                 this.loading = false;
                                 this.results = response.data.result;
                                 this.results.forEach(res => {
+                                    // set default values
                                     res['reviewed'] = false;
                                 });
                             })
@@ -192,7 +195,21 @@
                                 this.dialog = false;
                             });
                     } else {}
-                }
+                },
+
+                // Util functions
+                formatDate(date) {
+                    if (!date) return null
+
+                    const [year, month, day] = date.split('-')
+                    return `${month}-${day}-${year}`
+                },
+                parseDate(date) {
+                    if (!date) return null
+
+                    const [month, day, year] = date.split('-')
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+                },
 
             },
 
