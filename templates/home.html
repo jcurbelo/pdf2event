@@ -223,7 +223,9 @@
                     // Lazily load input items
                     axios
                         .get("/matters", {
-                            'search_text': val
+                            params: {
+                                search_text: val
+                            }
                         })
                         .then(response => {
                             this.matters = response.data.result;
