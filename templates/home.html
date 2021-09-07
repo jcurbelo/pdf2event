@@ -25,6 +25,39 @@
             <v-main>
                 {% if 'access_token' in request.session['oauth_values'] %}
                 <v-container>
+                    <v-card>
+                        <v-card-title>
+                            Search for Matters API
+                        </v-card-title>
+                        <v-card-text>
+                            <v-autocomplete v-model="selectedMatter" :items="items" :loading="isMatterLoading"
+                                :search-input.sync="search" hide-no-data hide-selected item-text="display_name"
+                                item-value="id" label="Matters" placeholder="Start typing to Search"
+                                prepend-icon="mdi-database-search" return-object>
+                            </v-autocomplete>
+                        </v-card-text>
+                        <v-divider></v-divider>
+                        <v-expand-transition>
+                            <v-list v-if="selectedMatter">
+                                <v-list-item v-for="(field, i) in fields" :key="i">
+                                    <v-list-item-content>
+                                        <v-list-item-title v-text="field.value"></v-list-item-title>
+                                        <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
+                                    </v-list-item-content>
+                                </v-list-item>
+                            </v-list>
+                        </v-expand-transition>
+                        <v-card-actions>
+                            <v-spacer></v-spacer>
+                            <v-btn :disabled="!selectedMatter" @click="selectedMatter = null">
+                                Clear
+                                <v-icon right>
+                                    mdi-close-circle
+                                </v-icon>
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+
                     <v-snackbar v-model="snackbar" :multi-line="true">
                         A total of {[ eventsCreated.length ]} events were created.
 
@@ -146,9 +179,66 @@
                 dialog: false,
                 eventsCreated: [],
                 snackbar: false,
-                matters: []
+                matters: [],
+
+                selectedMatter: '',
+                isMatterLoading: false,
+                descriptionLimit: 60,
+                search: null,
+
+            },
+            computed: {
+                fields() {
+                    if (!this.selectedMatter) return []
+
+                    return Object.keys(this.selectedMatter).map(key => {
+                        return {
+                            key,
+                            value: this.selectedMatter[key] || 'n/a',
+                        }
+                    })
+                },
+                items() {
+                    return this.matters.map(entry => {
+                        const display_name = entry.display_name.length > this.descriptionLimit ?
+                            entry.display_name.slice(0, this.descriptionLimit) + '...' :
+                            entry.display_name
+
+                        return Object.assign({}, entry, {
+                            display_name
+                        })
+                    })
+                },
+            },
+            watch: {
+                search(val) {
+                    // Items have already been loaded
+                    // if (this.items.length > 0) return
+
+                    // Items have already been requested
+                    if (this.isMatterLoading) return
+
+                    this.isMatterLoading = true
+
+                    // Lazily load input items
+                    axios
+                        .get("/matters", {
+                            'search_text': val
+                        })
+                        .then(response => {
+                            this.matters = response.data.result;
+                        })
+                        .catch(error => {
+                            console.log({
+                                error
+                            });
+                        })
+                        .finally(() => (this.isMatterLoading = false));
+
+                },
             },
             methods: {
+
                 uploadFiles() {
 
                     if (this.files) {
@@ -199,23 +289,6 @@
                             });
                     } else {}
                 },
-
-                getMatters() {
-                    axios
-                        .get("/matters")
-                        .then(response => {
-                            this.matters = response.data.result;
-                            console.log({
-                                matters: this.matters
-                            });
-                        })
-                        .catch(error => {
-                            console.log({
-                                error
-                            });
-                        });
-                },
-
                 // Util functions
                 formatDate(date) {
                     if (!date) return null
@@ -230,10 +303,6 @@
                     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
                 },
 
-            },
-
-            beforeMount() {
-                this.getMatters()
             },
 
         });
