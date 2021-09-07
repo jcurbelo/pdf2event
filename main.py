@@ -28,6 +28,13 @@ app.add_middleware(SessionMiddleware, secret_key=config(
     "SECRET_KEY", cast=Secret))
 
 
+@app.get("/matters")
+async def get_matters(request: Request):
+    oauth_values = request.session.get("oauth_values", {})
+    resp = await oauth.practice_panther.get("/api/v2/matters", token=oauth_values)
+    return {"result": resp.json()}
+
+
 @app.post("/upload-files")
 async def upload_files(files: List[UploadFile] = File(...)):
     return {"result": parse_files([get_file_io(f) for f in files])}

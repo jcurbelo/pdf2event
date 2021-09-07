@@ -146,6 +146,7 @@
                 dialog: false,
                 eventsCreated: [],
                 snackbar: false,
+                matters: []
             },
             methods: {
                 uploadFiles() {
@@ -168,6 +169,8 @@
                                     // set default values
                                     res['reviewed'] = false;
                                 });
+
+
                             })
                             .catch(error => {
                                 this.loading = false;
@@ -197,6 +200,22 @@
                     } else {}
                 },
 
+                getMatters() {
+                    axios
+                        .get("/matters")
+                        .then(response => {
+                            this.matters = response.data.result;
+                            console.log({
+                                matters: this.matters
+                            });
+                        })
+                        .catch(error => {
+                            console.log({
+                                error
+                            });
+                        });
+                },
+
                 // Util functions
                 formatDate(date) {
                     if (!date) return null
@@ -211,6 +230,10 @@
                     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
                 },
 
+            },
+
+            beforeMount() {
+                this.getMatters()
             },
 
         });
