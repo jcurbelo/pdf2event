@@ -31,7 +31,7 @@ app.add_middleware(SessionMiddleware, secret_key=config(
 @app.get("/matters")
 async def get_matters(request: Request):
     oauth_values = request.session.get("oauth_values", {})
-    resp = await oauth.practice_panther.get("/api/v2/matters", token=oauth_values)
+    resp = await oauth.practice_panther.get("/api/v2/matters&status=Open", token=oauth_values)
     return {"result": resp.json()}
 
 
