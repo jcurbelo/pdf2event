@@ -45,6 +45,20 @@ async def get_matters(request: Request, search_text: str = None):
     return {"result": matters[:20]}
 
 
+@app.get("/users")
+async def get_matters(request: Request, email_address: str = None):
+    oauth_values = request.session.get("oauth_values", {})
+    params = {
+    }
+    if email_address:
+        params["email_address"] = email_address
+    resp = await oauth.practice_panther.get("/api/v2/users",
+                                            params=params,
+                                            timeout=None,
+                                            token=oauth_values)
+    return {"result": resp.json()}
+
+
 @app.post("/upload-files")
 async def upload_files(files: List[UploadFile] = File(...)):
     return {"result": parse_files([get_file_io(f) for f in files])}
@@ -56,6 +70,7 @@ async def generate_events(request: Request, cases: List[dict]):
     results = []
     for case in cases:
         matter_ref = case["matter_ref"]
+        users = case["assigned_to_users"]
         for event in case["events"]:
             for date in event["dates"]:
                 payload = {
@@ -66,6 +81,7 @@ async def generate_events(request: Request, cases: List[dict]):
                     "matter_ref": {
                         "id": matter_ref["id"]
                     },
+                    "assigned_to_users": users,
                     "tags": [
                         "PDF2Event",
                     ]

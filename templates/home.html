@@ -45,6 +45,10 @@
                         </v-btn>
                     </v-col>
                     <v-divider></v-divider>
+                    <v-autocomplete v-if="results.length" v-model="user" :items="users" item-text="display_name"
+                        item-value="id" label="User" placeholder="Start typing to Search" return-object>
+                    </v-autocomplete>
+                    <v-divider v-if="results.length"></v-divider>
                     <v-dialog v-model="dialog" width="500">
                         <template v-slot:activator="{ on, attrs }">
 
@@ -159,9 +163,31 @@
                 matterQueries: {},
 
                 mLoading: false,
+
+                user: null,
+                users: [],
             },
 
             methods: {
+
+                searchUsers(email) {
+                    axios
+                        .get("/users", {
+                            params: {
+                                email_address: email
+                            }
+                        })
+                        .then(response => {
+                            this.users = response.data.result.slice();
+                        })
+                        .catch(error => {
+                            console.log({
+                                error
+                            });
+                        })
+                        .finally(() => {});
+                },
+
                 searchMatter(val, resultId) {
 
                     if (!resultId) return;
@@ -222,6 +248,7 @@
                                     this.isMatterLoading[res.id] = false;
                                 });
                                 this.results = results.slice();
+                                this.searchUsers();
                             })
                             .catch(error => {
                                 this.loading = false;
@@ -235,6 +262,12 @@
                     const reviewedEvents = this.results.filter(res => res.reviewed);
                     if (reviewedEvents) {
                         this.loading = true;
+                        // Assigns user to events
+                        reviewedEvents.forEach(res => {
+                            res.assigned_to_users = [{
+                                id: this.user.id
+                            }];
+                        });
 
                         axios
                             .post("/generate-events", reviewedEvents)
