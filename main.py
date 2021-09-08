@@ -74,7 +74,7 @@ async def generate_events(request: Request, cases: List[dict]):
         for event in case["events"]:
             for date in event["dates"]:
                 payload = {
-                    "subject": matter_ref["display_name"] + " - " + event["name"],
+                    "subject": "DEADLINE - " + event["name"],
                     "is_all_day": True,
                     "start_date_time": date["value"] + "T07:00:00Z",
                     "end_date_time": date["value"] + "T07:30:00Z",
