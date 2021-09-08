@@ -25,38 +25,6 @@
             <v-main>
                 {% if 'access_token' in request.session['oauth_values'] %}
                 <v-container>
-                    <v-card>
-                        <v-card-title>
-                            Search for Matters API
-                        </v-card-title>
-                        <v-card-text>
-                            <v-autocomplete v-model="selectedMatter" :items="items" :loading="isMatterLoading"
-                                :search-input.sync="search" hide-no-data hide-selected item-text="display_name"
-                                item-value="id" label="Matters" placeholder="Start typing to Search"
-                                prepend-icon="mdi-database-search" return-object>
-                            </v-autocomplete>
-                        </v-card-text>
-                        <v-divider></v-divider>
-                        <v-expand-transition>
-                            <v-list v-if="selectedMatter">
-                                <v-list-item v-for="(field, i) in fields" :key="i">
-                                    <v-list-item-content>
-                                        <v-list-item-title v-text="field.value"></v-list-item-title>
-                                        <v-list-item-subtitle v-text="field.key"></v-list-item-subtitle>
-                                    </v-list-item-content>
-                                </v-list-item>
-                            </v-list>
-                        </v-expand-transition>
-                        <v-card-actions>
-                            <v-spacer></v-spacer>
-                            <v-btn :disabled="!selectedMatter" @click="selectedMatter = null">
-                                Clear
-                                <v-icon right>
-                                    mdi-close-circle
-                                </v-icon>
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
 
                     <v-snackbar v-model="snackbar" :multi-line="true">
                         A total of {[ eventsCreated.length ]} events were created.
@@ -120,6 +88,12 @@
                             </v-expansion-panel-header>
                             <v-expansion-panel-content>
                                 <v-text-field label="CASE" v-model="res.case"></v-text-field>
+                                <v-autocomplete v-model="res.matter_ref" :items="matters[res.id]" :loading="mLoading"
+                                    @update:search-input="searchMatter($event, res.id)" hide-no-data hide-selected
+                                    item-text="display_name" item-value="id" label="Matter"
+                                    placeholder="Start typing to Search" prepend-icon="mdi-database-search"
+                                    return-object>
+                                </v-autocomplete>
 
                                 <v-list>
                                     <v-list-item v-for="event in res.events">
@@ -179,46 +153,27 @@
                 dialog: false,
                 eventsCreated: [],
                 snackbar: false,
-                matters: [],
+                matters: {},
 
-                selectedMatter: '',
-                isMatterLoading: false,
-                descriptionLimit: 60,
-                search: null,
+                isMatterLoading: {},
+                matterQueries: {},
 
+                mLoading: false,
             },
-            computed: {
-                fields() {
-                    if (!this.selectedMatter) return []
 
-                    return Object.keys(this.selectedMatter).map(key => {
-                        return {
-                            key,
-                            value: this.selectedMatter[key] || 'n/a',
-                        }
-                    })
-                },
-                items() {
-                    return this.matters.map(entry => {
-                        const display_name = entry.display_name.length > this.descriptionLimit ?
-                            entry.display_name.slice(0, this.descriptionLimit) + '...' :
-                            entry.display_name
+            methods: {
+                searchMatter(val, resultId) {
 
-                        return Object.assign({}, entry, {
-                            display_name
-                        })
-                    })
-                },
-            },
-            watch: {
-                search(val) {
-                    // Items have already been loaded
+                    if (!resultId) return;
+
                     if (!val || val.length < 3) return
 
                     // Items have already been requested
-                    if (this.isMatterLoading) return
+                    if (this.isMatterLoading[resultId]) return
 
-                    this.isMatterLoading = true
+                    this.isMatterLoading[resultId] = true;
+                    this.mLoading = true;
+                    this.matterQueries[resultId] = val;
 
                     // Lazily load input items
                     axios
@@ -228,18 +183,19 @@
                             }
                         })
                         .then(response => {
-                            this.matters = response.data.result;
+                            this.matters[resultId] = response.data.result.slice();
                         })
                         .catch(error => {
                             console.log({
                                 error
                             });
                         })
-                        .finally(() => (this.isMatterLoading = false));
+                        .finally(() => {
+                            this.isMatterLoading[resultId] = false;
+                            this.mLoading = false;
+                        });
 
                 },
-            },
-            methods: {
 
                 uploadFiles() {
 
@@ -256,13 +212,16 @@
                             .post("/upload-files", formData)
                             .then(response => {
                                 this.loading = false;
-                                this.results = response.data.result;
-                                this.results.forEach(res => {
+                                const results = response.data.result.slice();
+                                results.forEach(res => {
                                     // set default values
                                     res['reviewed'] = false;
+                                    res['matter_ref'] = null;
+                                    this.matters[res.id] = [];
+                                    this.matterQueries[res.id] = null;
+                                    this.isMatterLoading[res.id] = false;
                                 });
-
-
+                                this.results = results.slice();
                             })
                             .catch(error => {
                                 this.loading = false;

@@ -38,8 +38,11 @@ async def get_matters(request: Request, search_text: str = None):
         params["search_text"] = search_text
     resp = await oauth.practice_panther.get("/api/v2/matters",
                                             params=params,
+                                            timeout=None,
                                             token=oauth_values)
-    return {"result": resp.json()}
+    matters = resp.json()
+
+    return {"result": matters[:20]}
 
 
 @app.post("/upload-files")
@@ -55,10 +58,17 @@ async def generate_events(request: Request, cases: List[dict]):
         for event in case["events"]:
             for date in event["dates"]:
                 payload = {
-                    "subject": case["case"] + " - " + event["name"],
+                    "subject": case["matter_ref"]["display_name"] + " - " + event["name"],
                     "is_all_day": True,
                     "start_date_time": date["value"],
-                    "end_date_time": date["value"]
+                    "end_date_time": date["value"],
+                    "matter_ref": {
+                        "id": case["matter_ref"]["id"],
+                        "display_name": case["matter_ref"]["display_name"]
+                    },
+                    "tags": [
+                        "PDF2Event",
+                    ],
                 }
                 resp = await oauth.practice_panther.post("/api/v2/events", data=payload, token=oauth_values)
                 results.append(resp.json())
