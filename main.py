@@ -55,22 +55,22 @@ async def generate_events(request: Request, cases: List[dict]):
     oauth_values = request.session.get("oauth_values", {})
     results = []
     for case in cases:
+        matter_ref = case["matter_ref"]
         for event in case["events"]:
             for date in event["dates"]:
                 payload = {
-                    "subject": case["matter_ref"]["display_name"] + " - " + event["name"],
+                    "subject": matter_ref["display_name"] + " - " + event["name"],
                     "is_all_day": True,
-                    "start_date_time": date["value"],
-                    "end_date_time": date["value"],
+                    "start_date_time": date["value"] + "T07:00:00Z",
+                    "end_date_time": date["value"] + "T07:30:00Z",
                     "matter_ref": {
-                        "id": case["matter_ref"]["id"],
-                        "display_name": case["matter_ref"]["display_name"]
+                        "id": matter_ref["id"]
                     },
                     "tags": [
                         "PDF2Event",
-                    ],
+                    ]
                 }
-                resp = await oauth.practice_panther.post("/api/v2/events", data=payload, token=oauth_values)
+                resp = await oauth.practice_panther.post("/api/v2/events", json=payload, token=oauth_values)
                 results.append(resp.json())
 
     return {"result": results}
