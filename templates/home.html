@@ -86,19 +86,17 @@
                     <v-expansion-panels>
                         <v-expansion-panel v-for="res in results" :key="res.id">
                             <v-checkbox label="OK" v-model="res.reviewed"></v-checkbox>
+                            <v-autocomplete v-model="res.matter_ref" :items="matters[res.id]" :loading="mLoading"
+                                @update:search-input="searchMatter($event, res.id)" hide-no-data hide-selected
+                                item-text="display_name" item-value="id" label="Matter"
+                                placeholder="Start typing to Search" prepend-icon="mdi-database-search" return-object>
+                            </v-autocomplete>
                             <v-expansion-panel-header>
                                 CASE: {[ res.case ]} FILE: {[ res.filename ]} ({[
                                 res.datesCount ]} events found)
                             </v-expansion-panel-header>
                             <v-expansion-panel-content>
                                 <v-text-field label="CASE" v-model="res.case"></v-text-field>
-                                <v-autocomplete v-model="res.matter_ref" :items="matters[res.id]" :loading="mLoading"
-                                    @update:search-input="searchMatter($event, res.id)" hide-no-data hide-selected
-                                    item-text="display_name" item-value="id" label="Matter"
-                                    placeholder="Start typing to Search" prepend-icon="mdi-database-search"
-                                    return-object>
-                                </v-autocomplete>
-
                                 <v-list>
                                     <v-list-item v-for="event in res.events">
                                         <v-list-item-content>
