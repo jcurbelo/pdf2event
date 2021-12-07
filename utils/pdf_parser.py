@@ -35,7 +35,7 @@ DATES_COUNT = [
 
 
 def extract_case_number(text: str) -> str:
-    m = re.search(r"Case No: ([^\n]+)", text, re.MULTILINE | re.IGNORECASE)
+    m = re.search(r"Case\s*No[^:]*:\s*([^\n]+)", text, re.MULTILINE | re.IGNORECASE)
     if m:
         return m.group(1)
     return ""
